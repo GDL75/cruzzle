@@ -558,7 +558,7 @@ function updateHud() {
   $('#progressTxt').textContent = tf('progress', { ok, total });
   $('#progressBar').style.width = `${(ok / total) * 100}%`;
 
-  const anyTool = s.rot || s.flip || s.blur || s.pix;
+  const anyTool = s.rot || s.flip || s.blur || s.pix || s.nb || s.inv;
   const showTools = !!g.sel && anyTool && !g.over;
   $('#tools').classList.toggle('hidden', !showTools);
   $('#hint').classList.toggle('hidden', showTools);
