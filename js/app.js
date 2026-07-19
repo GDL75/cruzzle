@@ -327,25 +327,36 @@ function prepareImage(src, cols, rows, fxLevel) {
 
 /* ============================================================
    Orientation des vignettes (groupe diédral D4)
-   État : rot (degrés cumulés pour animer) + flip (miroir horizontal).
-   CSS : transform = scaleX(flip) rotate(rot)  →  rotation puis miroir.
+   État : rot (degrés cumulés pour animer) + flipH (miroir horizontal,
+   axe vertical) + flipV (miroir vertical, axe horizontal) — indépendants.
+   CSS : transform = scaleX(flipH) scaleY(flipV) rotate(rot).
+   Chaque bouton ne modifie qu'une seule fonction CSS à la fois, ce qui
+   rend chaque animation atomique et naturelle (pas de vrille combinée).
+   Quand un seul des deux miroirs est actif, la transformation inverse
+   la chiralité : le sens visuel des rotations cw/ccw doit alors être
+   inversé pour que les boutons restent toujours « visuellement »
+   corrects (d'où le calcul de parité ci-dessous).
    ============================================================ */
 
 function applyOp(t, op) {
+  const oddParity = t.flipH !== t.flipV;   // un seul miroir actif → sens inversé
   switch (op) {
-    case 'cw':  t.rot += t.flip ? -90 : 90; break;   // pivoter +90° à l'écran
-    case 'ccw': t.rot += t.flip ? 90 : -90; break;   // pivoter −90° à l'écran
-    case 'fh':  t.flip = !t.flip; break;             // miroir horizontal
-    case 'fv':  t.rot += t.flip ? -180 : 180;        // miroir vertical = miroir H + 180°
-                t.flip = !t.flip; break;
-    case 'fx':  t.fx = null; break;                  // retirer flou / pixelisation
+    case 'cw':  t.rot += oddParity ? -90 : 90; break;   // pivoter +90° à l'écran
+    case 'ccw': t.rot += oddParity ? 90 : -90; break;   // pivoter −90° à l'écran
+    case 'fh':  t.flipH = !t.flipH; break;              // miroir horizontal (axe vertical)
+    case 'fv':  t.flipV = !t.flipV; break;              // miroir vertical (axe horizontal)
+    case 'fx':  t.fx = null; break;                     // retirer flou / pixelisation
   }
 }
 
 /* Une vignette non nettoyée (flou / pixelisation) compte comme résolue :
-   seuls la position et l'orientation importent pour gagner. */
+   seuls la position et l'orientation importent pour gagner.
+   Deux combinaisons (flipH,flipV,rot) affichent la même image d'origine :
+   (false,false,0°) et (true,true,180°). */
 const isSolved = t =>
-  t.slot === t.home && mod(t.rot, 360) === 0 && !t.flip;
+  t.slot === t.home &&
+  t.flipH === t.flipV &&
+  mod(t.rot + (t.flipH ? 180 : 0), 360) === 0;
 
 /* ============================================================
    Partie
@@ -368,7 +379,8 @@ function startGame() {
         home: r * s.cols + c,
         slot: 0,
         rot: 0,
-        flip: false,
+        flipH: false,
+        flipV: false,
         fx: null,
         el: null,
         face: null,
@@ -382,6 +394,9 @@ function startGame() {
 
   // Mélange des orientations : tirage direct parmi les états que le joueur
   // peut défaire avec les boutons actifs. Le 180° se corrige en deux clics ±90°.
+  // flipH et flipV sont tirés indépendamment : chaque combinaison (rot, flipH,
+  // flipV) correspond à l'un des 8 états du groupe D4 (avec redondance 2 pour 1,
+  // ce qui ne pose aucun problème puisque isSolved() reconnaît les deux formes).
   const fxPool = [
     ...(s.blur ? ['blur'] : []),
     ...(s.pix ? ['pix'] : []),
@@ -389,15 +404,10 @@ function startGame() {
     ...(s.inv ? ['inv'] : []),
   ];
   tiles.forEach(t => {
-    if (s.rot && s.flip) {
-      t.rot = rand([0, 90, 180, 270]);
-      t.flip = Math.random() < 0.5;
-    } else if (s.rot) {
-      t.rot = rand([0, 90, 180, 270]);
-    } else if (s.flip) {
-      // Sans rotations, les miroirs H et V n'atteignent que 0° et 180°
-      t.rot = rand([0, 180]);
-      t.flip = Math.random() < 0.5;
+    if (s.rot) t.rot = rand([0, 90, 180, 270]);
+    if (s.flip) {
+      t.flipH = Math.random() < 0.5;
+      t.flipV = Math.random() < 0.5;
     }
     if (fxPool.length && Math.random() < 0.4) t.fx = rand(fxPool);
   });
@@ -469,7 +479,8 @@ function paintTile(t) {
   t.el.style.left = `${(t.slot % s.cols) * (100 / s.cols)}%`;
   t.el.style.top = `${Math.floor(t.slot / s.cols) * (100 / s.rows)}%`;
   t.face.style.backgroundImage = `url(${t.fx === 'pix' ? g.img.pixUrl : g.img.url})`;
-  t.face.style.transform = `scaleX(${t.flip ? -1 : 1}) rotate(${t.rot}deg)`;
+  t.face.style.transform =
+    `scaleX(${t.flipH ? -1 : 1}) scaleY(${t.flipV ? -1 : 1}) rotate(${t.rot}deg)`;
   t.face.classList.toggle('blur', t.fx === 'blur');
   t.face.classList.toggle('nb', t.fx === 'nb');
   t.face.classList.toggle('inv', t.fx === 'inv');
