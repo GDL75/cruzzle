@@ -1,0 +1,6 @@
+# Documents source de la présentation (non versionnés, hors app)
+*.pptx
+*.pdf
+
+# Fichiers macOS
+.DS_Store
