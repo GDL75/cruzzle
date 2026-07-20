@@ -615,12 +615,14 @@ function checkWin() {
   });
 
   const secs = Math.floor((Date.now() - g.start) / 1000);
+  const popMs = g.tiles.length * 45 + 650;    // durée de la vague d'animation des vignettes
+  const holdMs = 1400;                        // pause pour admirer la photo reconstituée
   setTimeout(() => {
     $('#winStats').textContent =
       tf(g.moves === 1 ? 'winStats1' : 'winStatsN', { m: g.moves, t: fmtTime(secs) });
     launchConfetti();
     overlay('win', true);
-  }, g.tiles.length * 45 + 650);
+  }, popMs + holdMs);
 }
 
 function launchConfetti() {
