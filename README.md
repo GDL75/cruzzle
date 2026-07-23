@@ -55,6 +55,20 @@ sans aucun service externe.
    (les effets restants sont révélés à la victoire). Avec un temps limité,
    dépasser le temps fait perdre la partie.
 
+## Score
+
+Affiché sur l'écran de victoire :
+
+- **10 points** par vignette résolue.
+- **Bonus vignettes intactes** : pour chaque vignette qui gardait son effet
+  (flou, pixelisation, N&B, négatif) jusqu'à la victoire — jamais nettoyée —
+  un bonus croissant selon le niveau de difficulté des transformations :
+  +10 pts en Facile, +25 en Moyen, +45 en Difficile.
+- **Malus mouvements** : −1 point par coup joué.
+- **Multiplicateur de transformations** : de ×0,4 (aucune transformation active)
+  à ×1 (les 6 activées — rotations, miroirs, flou, pixelisation, N&B, négatif),
+  pour qu'une partie simplifiée à l'accueil rapporte nécessairement moins.
+
 ## Structure
 
 - `index.html` — les trois écrans (configuration, jeu, fins de partie)

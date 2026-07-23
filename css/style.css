@@ -584,6 +584,51 @@ body::after {
   line-height: 1.5;
   color: rgba(38, 18, 13, 0.75);
 }
+
+.score-display {
+  margin: 0 0 14px;
+  animation: scorePop 0.5s cubic-bezier(0.3, 1.5, 0.4, 1) both;
+  animation-delay: 0.15s;
+}
+.score-display .score-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(38, 18, 13, 0.5);
+}
+.score-display strong {
+  display: block;
+  font-size: 2.7rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--red-dark);
+  font-variant-numeric: tabular-nums;
+}
+@keyframes scorePop {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.bonus-line, .mult-line {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 7px 10px;
+  line-height: 1.35;
+}
+.bonus-line {
+  color: var(--red-dark);
+  background: rgba(232, 41, 11, 0.09);
+}
+.mult-line {
+  color: rgba(38, 18, 13, 0.6);
+  background: rgba(38, 18, 13, 0.06);
+  font-weight: 600;
+}
+
 .panel-btns {
   display: flex;
   flex-direction: column;

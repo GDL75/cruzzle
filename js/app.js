@@ -47,8 +47,12 @@ const I18N = {
     fx1: 'Light effects', fx2: 'Medium effects', fx3: 'Strong effects',
     penaltyFree: 'cleaning is free', penaltyCost: 'cleaning a tile costs {n} s',
     winTitle: 'Well done!',
+    scoreLabel: 'Score',
     winStats1: 'Photo rebuilt in 1 move and {t}.',
     winStatsN: 'Photo rebuilt in {m} moves and {t}.',
+    bonusLine1: '+{pts} pts bonus — 1 tile kept intact ({level})',
+    bonusLineN: '+{pts} pts bonus — {n} tiles kept intact ({level})',
+    multLine: 'Active transformations: {n}/6 → score ×{mult}',
     replay: 'Play again', changeSetup: 'Change settings',
     loseTitle: "Time's up!",
     loseText: "The photo wasn't rebuilt in time. Try again?",
@@ -77,8 +81,12 @@ const I18N = {
     fx1: 'Effets légers', fx2: 'Effets moyens', fx3: 'Effets forts',
     penaltyFree: 'nettoyage sans pénalité', penaltyCost: 'nettoyer une vignette coûte {n} s',
     winTitle: 'Bravo !',
+    scoreLabel: 'Score',
     winStats1: 'Photo reconstituée en 1 coup et {t}.',
     winStatsN: 'Photo reconstituée en {m} coups et {t}.',
+    bonusLine1: '+{pts} pts bonus — 1 vignette intacte ({level})',
+    bonusLineN: '+{pts} pts bonus — {n} vignettes intactes ({level})',
+    multLine: 'Transformations actives : {n}/6 → score ×{mult}',
     replay: 'Rejouer', changeSetup: 'Modifier la partie',
     loseTitle: 'Temps écoulé !',
     loseText: "La photo n'a pas été reconstituée à temps. On retente ?",
@@ -107,8 +115,12 @@ const I18N = {
     fx1: 'Efectos suaves', fx2: 'Efectos medios', fx3: 'Efectos fuertes',
     penaltyFree: 'limpiar es gratis', penaltyCost: 'limpiar una ficha cuesta {n} s',
     winTitle: '¡Bravo!',
+    scoreLabel: 'Puntuación',
     winStats1: 'Foto reconstruida en 1 jugada y {t}.',
     winStatsN: 'Foto reconstruida en {m} jugadas y {t}.',
+    bonusLine1: '+{pts} pts bonus — 1 ficha intacta ({level})',
+    bonusLineN: '+{pts} pts bonus — {n} fichas intactas ({level})',
+    multLine: 'Transformaciones activas: {n}/6 → puntuación ×{mult}',
     replay: 'Jugar de nuevo', changeSetup: 'Cambiar ajustes',
     loseTitle: '¡Tiempo agotado!',
     loseText: 'La foto no se reconstruyó a tiempo. ¿Lo intentamos de nuevo?',
@@ -137,8 +149,12 @@ const I18N = {
     fx1: 'Leichte Effekte', fx2: 'Mittlere Effekte', fx3: 'Starke Effekte',
     penaltyFree: 'Säubern ohne Strafe', penaltyCost: 'Säubern kostet {n} s',
     winTitle: 'Bravo!',
+    scoreLabel: 'Punktzahl',
     winStats1: 'Foto in 1 Zug und {t} wiederhergestellt.',
     winStatsN: 'Foto in {m} Zügen und {t} wiederhergestellt.',
+    bonusLine1: '+{pts} Punkte Bonus — 1 unberührte Kachel ({level})',
+    bonusLineN: '+{pts} Punkte Bonus — {n} unberührte Kacheln ({level})',
+    multLine: 'Aktive Transformationen: {n}/6 → Punktzahl ×{mult}',
     replay: 'Nochmal spielen', changeSetup: 'Einstellungen ändern',
     loseTitle: 'Zeit abgelaufen!',
     loseText: 'Das Foto wurde nicht rechtzeitig wiederhergestellt. Nochmal versuchen?',
@@ -193,6 +209,22 @@ const PRESETS = {
 
 const BLUR_PX = { 1: '3px', 2: '6px', 3: '10px' };   // rayon de flou CSS
 const PIX_RES = { 1: 11,    2: 7,     3: 4 };        // pixels par vignette (pixelisation)
+
+/* ---------- Score ---------- */
+
+const PTS_PER_TILE = 10;                              // par vignette résolue
+const PTS_PER_MOVE = 1;                                // malus par coup joué
+const BONUS_UNCLEANED = { 1: 10, 2: 25, 3: 45 };       // par vignette jamais nettoyée, selon fxLevel
+const LEVEL_NAME_KEY = { 1: 'presetFacile', 2: 'presetMoyen', 3: 'presetDifficile' };
+
+// Moins de transformations actives = puzzle plus simple = score réduit.
+const TRANSFORM_KEYS = ['rot', 'flip', 'blur', 'pix', 'nb', 'inv'];
+const MULT_MIN = 0.4;   // multiplicateur si aucune transformation n'est active
+
+function transformMultiplier(s) {
+  const enabled = TRANSFORM_KEYS.filter(k => s[k]).length;
+  return MULT_MIN + (1 - MULT_MIN) * (enabled / TRANSFORM_KEYS.length);
+}
 
 const state = {
   photo: null,                    // HTMLCanvasElement ou HTMLImageElement
@@ -603,6 +635,21 @@ function checkWin() {
   $('#clock').classList.remove('warn');
   updateHud();
 
+  // Score : à calculer avant la révélation finale, qui nettoie les vignettes
+  // encore floutées/pixelisées/N&B/négatif (donc avant d'y perdre la trace).
+  const s = state.settings;
+  const bonusTiles = g.tiles.filter(t => t.fx).length;
+  const bonusPts = bonusTiles * (BONUS_UNCLEANED[s.fxLevel] || BONUS_UNCLEANED[2]);
+  const basePts = g.tiles.length * PTS_PER_TILE;
+  const movesMalus = g.moves * PTS_PER_MOVE;
+  const mult = transformMultiplier(s);
+  g.score = {
+    total: Math.round(Math.max(0, basePts + bonusPts - movesMalus) * mult),
+    bonusTiles, bonusPts, mult,
+    activeCount: TRANSFORM_KEYS.filter(k => s[k]).length,
+    levelKey: LEVEL_NAME_KEY[s.fxLevel] || LEVEL_NAME_KEY[2],
+  };
+
   // Révélation finale : les effets restants disparaissent (sans pénalité)
   g.tiles.forEach(t => {
     if (t.fx) { t.fx = null; paintTile(t); }
@@ -620,6 +667,27 @@ function checkWin() {
   setTimeout(() => {
     $('#winStats').textContent =
       tf(g.moves === 1 ? 'winStats1' : 'winStatsN', { m: g.moves, t: fmtTime(secs) });
+
+    const sc = g.score;
+    $('#scoreValue').textContent = sc.total;
+
+    const bonusLine = $('#winBonus');
+    if (sc.bonusTiles > 0) {
+      bonusLine.textContent = tf(sc.bonusTiles === 1 ? 'bonusLine1' : 'bonusLineN',
+        { pts: sc.bonusPts, n: sc.bonusTiles, level: t(sc.levelKey) });
+      bonusLine.classList.remove('hidden');
+    } else {
+      bonusLine.classList.add('hidden');
+    }
+
+    const multLine = $('#winMult');
+    if (sc.mult < 1) {
+      multLine.textContent = tf('multLine', { n: sc.activeCount, mult: sc.mult.toFixed(2) });
+      multLine.classList.remove('hidden');
+    } else {
+      multLine.classList.add('hidden');
+    }
+
     launchConfetti();
     overlay('win', true);
   }, popMs + holdMs);
