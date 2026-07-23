@@ -57,7 +57,6 @@ const I18N = {
     rowBonusLight1: '1 grayscale/negative tile kept intact', rowBonusLightN: '{n} grayscale/negative tiles kept intact',
     rowBonusStrong1: '1 blurred/pixelated tile kept intact', rowBonusStrongN: '{n} blurred/pixelated tiles kept intact',
     rowActive: '{n}/6 transformations enabled',
-    free: 'free',
     rowTotal: 'Total',
     zeroedLine: 'Score reset to zero — Easy mode time limit exceeded ({min} min for this grid).',
     replay: 'Play again', changeSetup: 'Change settings',
@@ -98,7 +97,6 @@ const I18N = {
     rowBonusLight1: '1 vignette N&B/négatif intacte', rowBonusLightN: '{n} vignettes N&B/négatif intactes',
     rowBonusStrong1: '1 vignette floutée/pixelisée intacte', rowBonusStrongN: '{n} vignettes floutées/pixelisées intactes',
     rowActive: '{n}/6 transformations activées',
-    free: 'gratuit',
     rowTotal: 'Total',
     zeroedLine: 'Score ramené à zéro — délai du niveau Facile dépassé ({min} min pour cette grille).',
     replay: 'Rejouer', changeSetup: 'Modifier la partie',
@@ -139,7 +137,6 @@ const I18N = {
     rowBonusLight1: '1 ficha B/N o negativo intacta', rowBonusLightN: '{n} fichas B/N o negativo intactas',
     rowBonusStrong1: '1 ficha borrosa/pixelada intacta', rowBonusStrongN: '{n} fichas borrosas/pixeladas intactas',
     rowActive: '{n}/6 transformaciones activadas',
-    free: 'gratis',
     rowTotal: 'Total',
     zeroedLine: 'Puntuación a cero — tiempo del nivel Fácil superado ({min} min para esta cuadrícula).',
     replay: 'Jugar de nuevo', changeSetup: 'Cambiar ajustes',
@@ -180,7 +177,6 @@ const I18N = {
     rowBonusLight1: '1 unberührte Graustufen-/Negativ-Kachel', rowBonusLightN: '{n} unberührte Graustufen-/Negativ-Kacheln',
     rowBonusStrong1: '1 unberührte unscharfe/verpixelte Kachel', rowBonusStrongN: '{n} unberührte unscharfe/verpixelte Kacheln',
     rowActive: '{n}/6 Transformationen aktiv',
-    free: 'kostenlos',
     rowTotal: 'Gesamt',
     zeroedLine: 'Punktzahl auf null gesetzt — Zeitlimit des Levels „Leicht“ überschritten ({min} Min. für dieses Raster).',
     replay: 'Nochmal spielen', changeSetup: 'Einstellungen ändern',
@@ -794,7 +790,7 @@ function checkWin() {
         <strong class="${cls}">${pts > 0 ? '+' : ''}${pts}</strong></div>`;
 
       const freeRow = label => `
-        <div class="score-row"><span>${label}</span><strong>${t('free')}</strong></div>`;
+        <div class="score-row"><span>${label}</span><strong>0</strong></div>`;
 
       const rows = [row(tfN('rowTiles', sc.okTiles), sc.basePts, 'pos')];
       if (sc.swaps > 0) rows.push(row(tfN('rowSwaps', sc.swaps), -sc.swapPts, 'neg'));
