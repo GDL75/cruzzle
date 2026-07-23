@@ -886,7 +886,8 @@ function initGameUi() {
   // clic d'ouverture, encore en train de remonter dans le DOM, déclenche
   // aussitôt le nouvel écouteur et referme la modale sur le même clic.
   let peekOpen = false;
-  document.addEventListener('click', e => {
+  let peekTouchedAt = 0;
+  const togglePeek = e => {
     if (peekOpen) {
       peekOpen = false;
       overlay('peek', false);
@@ -894,7 +895,26 @@ function initGameUi() {
       peekOpen = true;
       overlay('peek', true);
     }
+  };
+  document.addEventListener('click', e => {
+    // Filet de sécurité : ignore un clic de synthèse résiduel qui suivrait
+    // de très près (même frame) une ouverture déclenchée par touchend
+    // ci-dessous — la fenêtre est courte pour ne jamais bloquer un vrai
+    // second tap de l'utilisateur, seulement l'écho immédiat d'un seul geste.
+    if (Date.now() - peekTouchedAt < 80) return;
+    togglePeek(e);
   });
+  // iOS Safari : le bouton se retrouve couvert par l'overlay plein écran
+  // pendant l'appui (il disparaît sous elle), ce qui pousse WebKit à générer
+  // un clic de synthèse fantôme juste après — perçu comme un flash où la
+  // modale s'ouvre puis se referme aussitôt. On gère l'ouverture via
+  // touchend + preventDefault pour supprimer ce clic fantôme à la source ;
+  // la fermeture (clic sur l'overlay) continue de passer par 'click' ci-dessus.
+  $('#btnPeek').addEventListener('touchend', e => {
+    e.preventDefault();
+    peekTouchedAt = Date.now();
+    togglePeek(e);
+  }, { passive: false });
 
   // Fin de partie
   $('#btnReplay').addEventListener('click', () => { overlay('win', false); startGame(); });
