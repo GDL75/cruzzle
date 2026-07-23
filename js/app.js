@@ -244,14 +244,17 @@ const PIX_RES = { 1: 11,    2: 7,     3: 4 };        // pixels par vignette (pix
 // points (+2, une fois, à la victoire), quelle que soit la vignette qui la
 // reçoit ou non au mélange.
 //
-// Seuls les ÉCHANGES coûtent des points (tâtonnement de repositionnement) :
-// corriger une rotation/un miroir n'est pas du gaspillage mais un passage
-// obligé quand ces options sont cochées — le facturer annulerait quasiment
-// le bonus « transformations activées » qui vient récompenser ce choix.
-// Nettoyer est déjà pénalisé deux fois autrement (bonus perdu + secondes) ;
-// pas besoin d'un troisième malus en points pour la même action.
+// Les rotations/miroirs ne coûtent rien : corriger une orientation n'est pas
+// du gaspillage mais un passage obligé une fois ces options cochées — le
+// facturer annulerait quasiment le bonus « transformations activées » qui
+// récompense ce choix (elles sont indissociables : impossible de gagner
+// sans les corriger toutes). Nettoyer, en revanche, est un choix — on peut
+// toujours laisser une vignette floutée en place et toucher son bonus — donc
+// ça coûte un malus comme les échanges, en plus du bonus perdu et des
+// secondes de pénalité déjà en place.
 const PTS_PER_TILE = 3;                 // par vignette résolue
 const PTS_PER_SWAP = 1;                 // malus par échange de vignettes
+const PTS_PER_CLEAN = 1;                // malus par nettoyage (en plus du bonus perdu et des secondes)
 const FX_BONUS_LIGHT = 1;               // par vignette N&B/négatif intacte (jamais nettoyée)
 const FX_BONUS_STRONG = 2;              // par vignette floutée/pixelisée intacte (jamais nettoyée)
 const PTS_PER_ACTIVE_TRANSFORM = 2;     // par type de transformation coché à l'accueil (sur 6)
@@ -281,10 +284,10 @@ function computeScore() {
   const lightPts = lightTiles * FX_BONUS_LIGHT;
   const strongPts = strongTiles * FX_BONUS_STRONG;
 
-  // Seul le malus d'échange affecte le score (voir note ci-dessus) ;
-  // transforms/cleans restent comptés pour l'affichage (transparence) mais
-  // ne coûtent plus de points.
+  // Transforms reste compté pour l'affichage (transparence avec le total de
+  // coups) mais ne coûte plus de points — voir note ci-dessus.
   const swapPts = g.swaps * PTS_PER_SWAP;
+  const cleanPts = g.cleans * PTS_PER_CLEAN;
 
   const activeCount = TRANSFORM_KEYS.filter(k => s[k]).length;
   const activePts = activeCount * PTS_PER_ACTIVE_TRANSFORM;
@@ -293,11 +296,11 @@ function computeScore() {
   const zeroed = s.fxLevel === 1 && elapsed >= (FACILE_ZERO_AT[s.cols] ?? Infinity);
 
   return {
-    total: zeroed ? 0 : Math.max(0, basePts + lightPts + strongPts + activePts - swapPts),
+    total: zeroed ? 0 : Math.max(0, basePts + lightPts + strongPts + activePts - swapPts - cleanPts),
     basePts, okTiles,
     swaps: g.swaps, swapPts,
     transforms: g.transforms,
-    cleans: g.cleans,
+    cleans: g.cleans, cleanPts,
     lightTiles, lightPts, strongTiles, strongPts,
     activeCount, activePts, zeroed,
   };
@@ -795,7 +798,7 @@ function checkWin() {
       const rows = [row(tfN('rowTiles', sc.okTiles), sc.basePts, 'pos')];
       if (sc.swaps > 0) rows.push(row(tfN('rowSwaps', sc.swaps), -sc.swapPts, 'neg'));
       if (sc.transforms > 0) rows.push(freeRow(tfN('rowTransforms', sc.transforms)));
-      if (sc.cleans > 0) rows.push(freeRow(tfN('rowCleans', sc.cleans)));
+      if (sc.cleans > 0) rows.push(row(tfN('rowCleans', sc.cleans), -sc.cleanPts, 'neg'));
       if (sc.lightTiles > 0) rows.push(row(tfN('rowBonusLight', sc.lightTiles), sc.lightPts, 'pos'));
       if (sc.strongTiles > 0) rows.push(row(tfN('rowBonusStrong', sc.strongTiles), sc.strongPts, 'pos'));
       if (sc.activeCount > 0) rows.push(row(tf('rowActive', { n: sc.activeCount }), sc.activePts, 'pos'));

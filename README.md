@@ -66,11 +66,12 @@ Petits nombres entiers, additionnables de tête — pas de multiplicateur final 
   sans jamais avoir été nettoyée — bien placée et bien orientée quand même —
   +1 pt si l'effet est léger (N&B, négatif), +2 pts s'il est fort (flou,
   pixelisation).
-- **Malus échanges** : −1 point par échange de vignettes. Seuls les échanges
-  coûtent des points : corriger une rotation/un miroir n'est pas un
-  gaspillage mais un passage obligé quand ces options sont cochées, et
-  nettoyer est déjà pénalisé autrement (bonus perdu + secondes) — les
-  facturer aussi en points annulerait le bonus ci-dessous.
+- **Malus échanges et nettoyages** : −1 point par échange de vignettes et
+  −1 point par nettoyage. Corriger une rotation/un miroir, en revanche, ne
+  coûte rien : c'est un passage obligé quand ces options sont cochées, pas
+  un gaspillage — le facturer annulerait le bonus ci-dessous. Nettoyer reste
+  un choix (on peut toujours laisser une vignette floutée intacte), donc son
+  malus en points s'ajoute au bonus perdu et aux secondes de pénalité.
 - **Bonus transformations activées** : +2 points par type de transformation
   coché à l'accueil (sur 6 : rotations, miroirs, flou, pixelisation, N&B,
   négatif), accordé une seule fois à la victoire — c'est le seul moyen
