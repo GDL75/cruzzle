@@ -748,14 +748,25 @@ function initGameUi() {
     if (b) onToolOp(b.dataset.op);
   });
 
-  // Aperçu du modèle : maintenir appuyé
+  // Aperçu du modèle : maintenir appuyé.
+  // La capture de pointeur évite qu'un pointerleave prématuré (déclenché
+  // dès que l'overlay plein écran passe au-dessus du bouton) ne referme
+  // l'aperçu instantanément.
   const peekBtn = $('#btnPeek');
-  const peekOn = e => { e.preventDefault(); overlay('peek', true); };
-  const peekOff = () => overlay('peek', false);
+  const peekOn = e => {
+    e.preventDefault();
+    peekBtn.setPointerCapture(e.pointerId);
+    overlay('peek', true);
+  };
+  const peekOff = e => {
+    if (e?.pointerId != null && peekBtn.hasPointerCapture(e.pointerId)) {
+      peekBtn.releasePointerCapture(e.pointerId);
+    }
+    overlay('peek', false);
+  };
   peekBtn.addEventListener('pointerdown', peekOn);
   peekBtn.addEventListener('pointerup', peekOff);
   peekBtn.addEventListener('pointercancel', peekOff);
-  peekBtn.addEventListener('pointerleave', peekOff);
 
   // Fin de partie
   $('#btnReplay').addEventListener('click', () => { overlay('win', false); startGame(); });

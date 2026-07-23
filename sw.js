@@ -4,7 +4,7 @@
    Incrémenter CACHE à chaque mise à jour des fichiers pour forcer
    le rafraîchissement chez les utilisateurs. */
 
-const CACHE = 'cruzzle-v4';
+const CACHE = 'cruzzle-v5';
 
 const ASSETS = [
   '.',
