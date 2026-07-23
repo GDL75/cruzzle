@@ -53,6 +53,7 @@ const I18N = {
     bonusLine1: '+{pts} pts bonus — 1 tile kept intact ({level})',
     bonusLineN: '+{pts} pts bonus — {n} tiles kept intact ({level})',
     multLine: 'Active transformations: {n}/6 → score ×{mult}',
+    zeroedLine: 'Score reset to zero — Easy mode time limit exceeded ({min} min for this grid).',
     replay: 'Play again', changeSetup: 'Change settings',
     loseTitle: "Time's up!",
     loseText: "The photo wasn't rebuilt in time. Try again?",
@@ -87,6 +88,7 @@ const I18N = {
     bonusLine1: '+{pts} pts bonus — 1 vignette intacte ({level})',
     bonusLineN: '+{pts} pts bonus — {n} vignettes intactes ({level})',
     multLine: 'Transformations actives : {n}/6 → score ×{mult}',
+    zeroedLine: 'Score ramené à zéro — délai du niveau Facile dépassé ({min} min pour cette grille).',
     replay: 'Rejouer', changeSetup: 'Modifier la partie',
     loseTitle: 'Temps écoulé !',
     loseText: "La photo n'a pas été reconstituée à temps. On retente ?",
@@ -121,6 +123,7 @@ const I18N = {
     bonusLine1: '+{pts} pts bonus — 1 ficha intacta ({level})',
     bonusLineN: '+{pts} pts bonus — {n} fichas intactas ({level})',
     multLine: 'Transformaciones activas: {n}/6 → puntuación ×{mult}',
+    zeroedLine: 'Puntuación a cero — tiempo del nivel Fácil superado ({min} min para esta cuadrícula).',
     replay: 'Jugar de nuevo', changeSetup: 'Cambiar ajustes',
     loseTitle: '¡Tiempo agotado!',
     loseText: 'La foto no se reconstruyó a tiempo. ¿Lo intentamos de nuevo?',
@@ -155,6 +158,7 @@ const I18N = {
     bonusLine1: '+{pts} Punkte Bonus — 1 unberührte Kachel ({level})',
     bonusLineN: '+{pts} Punkte Bonus — {n} unberührte Kacheln ({level})',
     multLine: 'Aktive Transformationen: {n}/6 → Punktzahl ×{mult}',
+    zeroedLine: 'Punktzahl auf null gesetzt — Zeitlimit des Levels „Leicht“ überschritten ({min} Min. für dieses Raster).',
     replay: 'Nochmal spielen', changeSetup: 'Einstellungen ändern',
     loseTitle: 'Zeit abgelaufen!',
     loseText: 'Das Foto wurde nicht rechtzeitig wiederhergestellt. Nochmal versuchen?',
@@ -224,6 +228,35 @@ const MULT_MIN = 0.4;   // multiplicateur si aucune transformation n'est active
 function transformMultiplier(s) {
   const enabled = TRANSFORM_KEYS.filter(k => s[k]).length;
   return MULT_MIN + (1 - MULT_MIN) * (enabled / TRANSFORM_KEYS.length);
+}
+
+// Niveau Facile uniquement : passé ce délai (selon la taille de grille), le
+// score retombe à zéro. La partie continue, mais ne rapporte plus rien —
+// c'est la seule contrainte de temps du niveau Facile (pas de limite stricte
+// par défaut). Clé = nombre de colonnes (les grilles sont toujours carrées).
+const FACILE_ZERO_AT = { 3: 180, 4: 300, 5: 420, 6: 540 };   // 3/5/7/9 min
+
+// Calcule le score courant (utilisé en direct pendant la partie et à la
+// victoire, pour garantir un résultat toujours cohérent entre les deux).
+function computeScore() {
+  const g = state.game;
+  const s = state.settings;
+
+  const bonusTiles = g.tiles.filter(t => isSolved(t) && t.fx).length;
+  const bonusPts = bonusTiles * (BONUS_UNCLEANED[s.fxLevel] || BONUS_UNCLEANED[2]);
+  const basePts = g.tiles.length * PTS_PER_TILE;
+  const movesMalus = g.moves * PTS_PER_MOVE;
+  const mult = transformMultiplier(s);
+
+  const elapsed = Math.floor((Date.now() - g.start) / 1000);
+  const zeroed = s.fxLevel === 1 && elapsed >= (FACILE_ZERO_AT[s.cols] ?? Infinity);
+
+  return {
+    total: zeroed ? 0 : Math.round(Math.max(0, basePts + bonusPts - movesMalus) * mult),
+    bonusTiles, bonusPts, mult, zeroed,
+    activeCount: TRANSFORM_KEYS.filter(k => s[k]).length,
+    levelKey: LEVEL_NAME_KEY[s.fxLevel] || LEVEL_NAME_KEY[2],
+  };
 }
 
 const state = {
@@ -595,6 +628,27 @@ function updateHud() {
   $('#tools').classList.toggle('hidden', !showTools);
   $('#hint').classList.toggle('hidden', showTools);
   if (g.sel) $('#opFx').disabled = !g.sel.fx;
+
+  updateLiveScore();
+}
+
+/* Score affiché en direct dans le HUD, pendant la partie. Appelé après
+   chaque coup/outil (via updateHud) et à chaque tic d'horloge, pour que
+   le passage à zéro (niveau Facile, temps dépassé) apparaisse même sans
+   nouvelle action du joueur. */
+function updateLiveScore() {
+  const g = state.game;
+  if (!g || g.over) return;
+  const sc = computeScore();
+  const el = $('#liveScore');
+  const changed = el.textContent !== String(sc.total);
+  el.textContent = sc.total;
+  el.classList.toggle('zeroed', sc.zeroed);
+  if (changed) {
+    el.classList.remove('bump');
+    void el.offsetWidth;   // relance l'animation même si la classe était déjà posée
+    el.classList.add('bump');
+  }
 }
 
 /* ---------- Chronomètre ---------- */
@@ -614,10 +668,12 @@ function startClock() {
         g.sel = null;
         updateHud();
         overlay('lose', true);
+        return;
       }
     } else {
       clock.textContent = fmtTime(elapsed);
     }
+    updateLiveScore();
   };
   tick();
   g.timerId = setInterval(tick, 250);
@@ -637,18 +693,7 @@ function checkWin() {
 
   // Score : à calculer avant la révélation finale, qui nettoie les vignettes
   // encore floutées/pixelisées/N&B/négatif (donc avant d'y perdre la trace).
-  const s = state.settings;
-  const bonusTiles = g.tiles.filter(t => t.fx).length;
-  const bonusPts = bonusTiles * (BONUS_UNCLEANED[s.fxLevel] || BONUS_UNCLEANED[2]);
-  const basePts = g.tiles.length * PTS_PER_TILE;
-  const movesMalus = g.moves * PTS_PER_MOVE;
-  const mult = transformMultiplier(s);
-  g.score = {
-    total: Math.round(Math.max(0, basePts + bonusPts - movesMalus) * mult),
-    bonusTiles, bonusPts, mult,
-    activeCount: TRANSFORM_KEYS.filter(k => s[k]).length,
-    levelKey: LEVEL_NAME_KEY[s.fxLevel] || LEVEL_NAME_KEY[2],
-  };
+  g.score = computeScore();
 
   // Révélation finale : les effets restants disparaissent (sans pénalité)
   g.tiles.forEach(t => {
@@ -672,20 +717,34 @@ function checkWin() {
     $('#scoreValue').textContent = sc.total;
 
     const bonusLine = $('#winBonus');
-    if (sc.bonusTiles > 0) {
-      bonusLine.textContent = tf(sc.bonusTiles === 1 ? 'bonusLine1' : 'bonusLineN',
-        { pts: sc.bonusPts, n: sc.bonusTiles, level: t(sc.levelKey) });
-      bonusLine.classList.remove('hidden');
-    } else {
-      bonusLine.classList.add('hidden');
-    }
-
     const multLine = $('#winMult');
-    if (sc.mult < 1) {
-      multLine.textContent = tf('multLine', { n: sc.activeCount, mult: sc.mult.toFixed(2) });
-      multLine.classList.remove('hidden');
-    } else {
+    const zeroedLine = $('#winZeroed');
+
+    if (sc.zeroed) {
+      // Score nul (niveau Facile, délai dépassé) : les autres lignes de détail
+      // n'ont plus de sens puisqu'elles n'expliqueraient pas un total à 0.
+      bonusLine.classList.add('hidden');
       multLine.classList.add('hidden');
+      const mins = Math.round((FACILE_ZERO_AT[state.settings.cols] ?? 0) / 60);
+      zeroedLine.textContent = tf('zeroedLine', { min: mins });
+      zeroedLine.classList.remove('hidden');
+    } else {
+      zeroedLine.classList.add('hidden');
+
+      if (sc.bonusTiles > 0) {
+        bonusLine.textContent = tf(sc.bonusTiles === 1 ? 'bonusLine1' : 'bonusLineN',
+          { pts: sc.bonusPts, n: sc.bonusTiles, level: t(sc.levelKey) });
+        bonusLine.classList.remove('hidden');
+      } else {
+        bonusLine.classList.add('hidden');
+      }
+
+      if (sc.mult < 1) {
+        multLine.textContent = tf('multLine', { n: sc.activeCount, mult: sc.mult.toFixed(2) });
+        multLine.classList.remove('hidden');
+      } else {
+        multLine.classList.add('hidden');
+      }
     }
 
     launchConfetti();

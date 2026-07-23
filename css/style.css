@@ -293,9 +293,10 @@ body::after {
 .hud {
   width: min(94vw, 560px);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px 10px;
   margin-bottom: 10px;
 }
 
@@ -359,6 +360,23 @@ body::after {
   color: var(--ink);
 }
 .stat strong.warn { color: var(--red); animation: pulse 1s infinite; }
+
+.stat-score strong {
+  color: var(--red-dark);
+  font-weight: 800;
+  transition: color 0.3s ease;
+}
+.stat-score strong.zeroed {
+  color: rgba(38, 18, 13, 0.35);
+}
+.stat-score strong.bump {
+  animation: scoreBump 0.3s ease;
+}
+@keyframes scoreBump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
 
 @keyframes pulse {
   50% { opacity: 0.45; }
@@ -628,6 +646,10 @@ body::after {
   background: rgba(38, 18, 13, 0.06);
   font-weight: 600;
 }
+.zeroed-line {
+  color: var(--red-dark);
+  background: rgba(232, 41, 11, 0.09);
+}
 
 .panel-btns {
   display: flex;
@@ -661,4 +683,8 @@ body::after {
   .checks { grid-template-columns: 1fr 1fr; }
   .tools button { min-width: 62px; padding: 8px 8px 6px; }
   .brand-box { padding: 16px 28px 18px; }
+  .hud { justify-content: center; }
+  .hud .stat { order: 1; }
+  .hud #btnBack { order: 0; }
+  .hud #btnPeek { order: 2; }
 }
