@@ -455,10 +455,13 @@ function startGame() {
         face: null,
       });
 
-  // Mélange des positions (jamais la permutation identité)
+  // Mélange des positions : un vrai dérangement (aucune vignette dans sa
+  // propre case), pas seulement « pas toutes à la fois » — sinon une
+  // vignette isolée peut atterrir chez elle par hasard et afficher la
+  // pastille verte dès le lancement, avant même le premier coup.
   let perm;
   do { perm = shuffle([...Array(total).keys()]); }
-  while (perm.every((v, i) => v === i));
+  while (perm.some((v, i) => v === i));
   perm.forEach((slot, i) => { tiles[i].slot = slot; });
 
   // Mélange des orientations : tirage direct parmi les états que le joueur
