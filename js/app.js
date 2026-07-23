@@ -880,28 +880,30 @@ function initGameUi() {
   });
 
   // Aperçu du modèle : maintenir appuyé.
-  // La capture de pointeur évite qu'un pointerleave prématuré (déclenché
-  // dès que l'overlay plein écran passe au-dessus du bouton) ne referme
-  // l'aperçu instantanément.
+  // Le relâchement est écouté sur window plutôt que sur le bouton lui-même :
+  // sur iOS Safari, une fois l'overlay plein écran affiché par-dessus le
+  // bouton (toujours sous le doigt), WebKit ne redéclenche pas fiablement
+  // pointerup ciblé sur ce bouton précis, même avec la capture de pointeur.
+  // En écoutant window, peu importe l'élément visuellement sous le doigt au
+  // relâchement (bouton, overlay, photo…) : l'événement y remonte toujours.
   const peekBtn = $('#btnPeek');
-  const peekOn = e => {
-    e.preventDefault();
-    peekBtn.setPointerCapture(e.pointerId);
-    overlay('peek', true);
-  };
-  const peekOff = e => {
-    if (e?.pointerId != null && peekBtn.hasPointerCapture(e.pointerId)) {
-      peekBtn.releasePointerCapture(e.pointerId);
-    }
+  const peekEnd = e => {
+    if (e.pointerId !== undefined && e.pointerId !== peekBtn._peekPointerId) return;
     overlay('peek', false);
+    window.removeEventListener('pointerup', peekEnd);
+    window.removeEventListener('pointercancel', peekEnd);
   };
-  peekBtn.addEventListener('pointerdown', peekOn);
-  peekBtn.addEventListener('pointerup', peekOff);
-  peekBtn.addEventListener('pointercancel', peekOff);
+  peekBtn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    peekBtn._peekPointerId = e.pointerId;
+    overlay('peek', true);
+    window.addEventListener('pointerup', peekEnd);
+    window.addEventListener('pointercancel', peekEnd);
+  });
 
   // Filet de sécurité (surtout mobile) : toucher en dehors de la photo
-  // referme aussi l'aperçu, au cas où le relâchement du doigt sur le
-  // bouton n'aurait pas fermé la modale (glissement, capture perdue…).
+  // referme aussi l'aperçu, au cas où le relâchement du doigt n'aurait pas
+  // fermé la modale.
   $('#peek').addEventListener('pointerdown', e => {
     if (e.target.tagName !== 'IMG') overlay('peek', false);
   });
