@@ -899,6 +899,13 @@ function initGameUi() {
   peekBtn.addEventListener('pointerup', peekOff);
   peekBtn.addEventListener('pointercancel', peekOff);
 
+  // Filet de sécurité (surtout mobile) : toucher en dehors de la photo
+  // referme aussi l'aperçu, au cas où le relâchement du doigt sur le
+  // bouton n'aurait pas fermé la modale (glissement, capture perdue…).
+  $('#peek').addEventListener('pointerdown', e => {
+    if (e.target.tagName !== 'IMG') overlay('peek', false);
+  });
+
   // Fin de partie
   $('#btnReplay').addEventListener('click', () => { overlay('win', false); startGame(); });
   $('#btnRetry').addEventListener('click', () => { overlay('lose', false); startGame(); });
