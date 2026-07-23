@@ -242,9 +242,13 @@ function computeScore() {
   const g = state.game;
   const s = state.settings;
 
+  // Points de base sur les vignettes RÉSOLUES à l'instant présent (pastille
+  // verte), pas sur le total de la grille — sinon le score en direct
+  // n'augmente jamais au fil de la partie. Les deux coïncident à la victoire.
+  const okTiles = g.tiles.filter(isSolved).length;
   const bonusTiles = g.tiles.filter(t => isSolved(t) && t.fx).length;
   const bonusPts = bonusTiles * (BONUS_UNCLEANED[s.fxLevel] || BONUS_UNCLEANED[2]);
-  const basePts = g.tiles.length * PTS_PER_TILE;
+  const basePts = okTiles * PTS_PER_TILE;
   const movesMalus = g.moves * PTS_PER_MOVE;
   const mult = transformMultiplier(s);
 
