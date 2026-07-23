@@ -58,7 +58,7 @@ const I18N = {
     loseTitle: "Time's up!",
     loseText: "The photo wasn't rebuilt in time. Try again?",
     retry: 'Try again', peekCaption: 'Original photo',
-    ariaBack: 'Back to settings', ariaPeek: 'Show the original photo (hold)',
+    ariaBack: 'Back to settings', ariaPeek: 'Show the original photo',
   },
   fr: {
     photoTitle: 'Votre photo',
@@ -93,7 +93,7 @@ const I18N = {
     loseTitle: 'Temps écoulé !',
     loseText: "La photo n'a pas été reconstituée à temps. On retente ?",
     retry: 'Réessayer', peekCaption: 'Photo originale',
-    ariaBack: 'Retour aux réglages', ariaPeek: 'Voir la photo modèle (maintenir)',
+    ariaBack: 'Retour aux réglages', ariaPeek: 'Voir la photo modèle',
   },
   es: {
     photoTitle: 'Tu foto',
@@ -128,7 +128,7 @@ const I18N = {
     loseTitle: '¡Tiempo agotado!',
     loseText: 'La foto no se reconstruyó a tiempo. ¿Lo intentamos de nuevo?',
     retry: 'Reintentar', peekCaption: 'Foto original',
-    ariaBack: 'Volver a los ajustes', ariaPeek: 'Ver la foto original (mantener pulsado)',
+    ariaBack: 'Volver a los ajustes', ariaPeek: 'Ver la foto original',
   },
   de: {
     photoTitle: 'Dein Foto',
@@ -163,7 +163,7 @@ const I18N = {
     loseTitle: 'Zeit abgelaufen!',
     loseText: 'Das Foto wurde nicht rechtzeitig wiederhergestellt. Nochmal versuchen?',
     retry: 'Nochmal versuchen', peekCaption: 'Originalfoto',
-    ariaBack: 'Zurück zu den Einstellungen', ariaPeek: 'Originalfoto anzeigen (gedrückt halten)',
+    ariaBack: 'Zurück zu den Einstellungen', ariaPeek: 'Originalfoto anzeigen',
   },
 };
 
@@ -879,33 +879,21 @@ function initGameUi() {
     if (b) onToolOp(b.dataset.op);
   });
 
-  // Aperçu du modèle : maintenir appuyé.
-  // Le relâchement est écouté sur window plutôt que sur le bouton lui-même :
-  // sur iOS Safari, une fois l'overlay plein écran affiché par-dessus le
-  // bouton (toujours sous le doigt), WebKit ne redéclenche pas fiablement
-  // pointerup ciblé sur ce bouton précis, même avec la capture de pointeur.
-  // En écoutant window, peu importe l'élément visuellement sous le doigt au
-  // relâchement (bouton, overlay, photo…) : l'événement y remonte toujours.
-  const peekBtn = $('#btnPeek');
-  const peekEnd = e => {
-    if (e.pointerId !== undefined && e.pointerId !== peekBtn._peekPointerId) return;
-    overlay('peek', false);
-    window.removeEventListener('pointerup', peekEnd);
-    window.removeEventListener('pointercancel', peekEnd);
-  };
-  peekBtn.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    peekBtn._peekPointerId = e.pointerId;
-    overlay('peek', true);
-    window.addEventListener('pointerup', peekEnd);
-    window.addEventListener('pointercancel', peekEnd);
-  });
-
-  // Filet de sécurité (surtout mobile) : toucher en dehors de la photo
-  // referme aussi l'aperçu, au cas où le relâchement du doigt n'aurait pas
-  // fermé la modale.
-  $('#peek').addEventListener('pointerdown', e => {
-    if (e.target.tagName !== 'IMG') overlay('peek', false);
+  // Aperçu du modèle : un clic sur le bouton l'ouvre, le clic suivant — où
+  // qu'il soit, y compris sur la photo — le referme. Un seul écouteur
+  // permanent avec un état interne, plutôt que d'ajouter/retirer un
+  // écouteur « fermer » à l'ouverture : ça évite le piège classique où le
+  // clic d'ouverture, encore en train de remonter dans le DOM, déclenche
+  // aussitôt le nouvel écouteur et referme la modale sur le même clic.
+  let peekOpen = false;
+  document.addEventListener('click', e => {
+    if (peekOpen) {
+      peekOpen = false;
+      overlay('peek', false);
+    } else if (e.target.closest('#btnPeek')) {
+      peekOpen = true;
+      overlay('peek', true);
+    }
   });
 
   // Fin de partie
