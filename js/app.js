@@ -54,9 +54,9 @@ const I18N = {
     rowSwaps1: '1 tile swap', rowSwapsN: '{n} tile swaps',
     rowTransforms1: '1 transformation (rotate/flip)', rowTransformsN: '{n} transformations (rotate/flip)',
     rowCleans1: '1 tile cleaned', rowCleansN: '{n} tiles cleaned',
-    rowBonus1: '1 tile kept intact ({level})', rowBonusN: '{n} tiles kept intact ({level})',
-    rowSubtotal: 'Subtotal',
-    rowMult: 'Active transformations: {n}/6',
+    rowBonusLight1: '1 grayscale/negative tile kept intact', rowBonusLightN: '{n} grayscale/negative tiles kept intact',
+    rowBonusStrong1: '1 blurred/pixelated tile kept intact', rowBonusStrongN: '{n} blurred/pixelated tiles kept intact',
+    rowActive: '{n}/6 transformations enabled',
     rowTotal: 'Total',
     zeroedLine: 'Score reset to zero — Easy mode time limit exceeded ({min} min for this grid).',
     replay: 'Play again', changeSetup: 'Change settings',
@@ -94,9 +94,9 @@ const I18N = {
     rowSwaps1: '1 échange de vignettes', rowSwapsN: '{n} échanges de vignettes',
     rowTransforms1: '1 transformation (rotation/miroir)', rowTransformsN: '{n} transformations (rotations/miroirs)',
     rowCleans1: '1 vignette nettoyée', rowCleansN: '{n} vignettes nettoyées',
-    rowBonus1: '1 vignette intacte ({level})', rowBonusN: '{n} vignettes intactes ({level})',
-    rowSubtotal: 'Sous-total',
-    rowMult: 'Transformations actives : {n}/6',
+    rowBonusLight1: '1 vignette N&B/négatif intacte', rowBonusLightN: '{n} vignettes N&B/négatif intactes',
+    rowBonusStrong1: '1 vignette floutée/pixelisée intacte', rowBonusStrongN: '{n} vignettes floutées/pixelisées intactes',
+    rowActive: '{n}/6 transformations activées',
     rowTotal: 'Total',
     zeroedLine: 'Score ramené à zéro — délai du niveau Facile dépassé ({min} min pour cette grille).',
     replay: 'Rejouer', changeSetup: 'Modifier la partie',
@@ -134,9 +134,9 @@ const I18N = {
     rowSwaps1: '1 intercambio de fichas', rowSwapsN: '{n} intercambios de fichas',
     rowTransforms1: '1 transformación (rotar/espejo)', rowTransformsN: '{n} transformaciones (rotar/espejo)',
     rowCleans1: '1 ficha limpiada', rowCleansN: '{n} fichas limpiadas',
-    rowBonus1: '1 ficha intacta ({level})', rowBonusN: '{n} fichas intactas ({level})',
-    rowSubtotal: 'Subtotal',
-    rowMult: 'Transformaciones activas: {n}/6',
+    rowBonusLight1: '1 ficha B/N o negativo intacta', rowBonusLightN: '{n} fichas B/N o negativo intactas',
+    rowBonusStrong1: '1 ficha borrosa/pixelada intacta', rowBonusStrongN: '{n} fichas borrosas/pixeladas intactas',
+    rowActive: '{n}/6 transformaciones activadas',
     rowTotal: 'Total',
     zeroedLine: 'Puntuación a cero — tiempo del nivel Fácil superado ({min} min para esta cuadrícula).',
     replay: 'Jugar de nuevo', changeSetup: 'Cambiar ajustes',
@@ -174,9 +174,9 @@ const I18N = {
     rowSwaps1: '1 Kachel-Tausch', rowSwapsN: '{n} Kachel-Tausche',
     rowTransforms1: '1 Transformation (Drehen/Spiegeln)', rowTransformsN: '{n} Transformationen (Drehen/Spiegeln)',
     rowCleans1: '1 Kachel gesäubert', rowCleansN: '{n} Kacheln gesäubert',
-    rowBonus1: '1 unberührte Kachel ({level})', rowBonusN: '{n} unberührte Kacheln ({level})',
-    rowSubtotal: 'Zwischensumme',
-    rowMult: 'Aktive Transformationen: {n}/6',
+    rowBonusLight1: '1 unberührte Graustufen-/Negativ-Kachel', rowBonusLightN: '{n} unberührte Graustufen-/Negativ-Kacheln',
+    rowBonusStrong1: '1 unberührte unscharfe/verpixelte Kachel', rowBonusStrongN: '{n} unberührte unscharfe/verpixelte Kacheln',
+    rowActive: '{n}/6 Transformationen aktiv',
     rowTotal: 'Gesamt',
     zeroedLine: 'Punktzahl auf null gesetzt — Zeitlimit des Levels „Leicht“ überschritten ({min} Min. für dieses Raster).',
     replay: 'Nochmal spielen', changeSetup: 'Einstellungen ändern',
@@ -236,19 +236,20 @@ const PIX_RES = { 1: 11,    2: 7,     3: 4 };        // pixels par vignette (pix
 
 /* ---------- Score ---------- */
 
-const PTS_PER_TILE = 10;                              // par vignette résolue
-const PTS_PER_MOVE = 1;                                // malus par coup joué
-const BONUS_UNCLEANED = { 1: 10, 2: 25, 3: 45 };       // par vignette jamais nettoyée, selon fxLevel
-const LEVEL_NAME_KEY = { 1: 'presetFacile', 2: 'presetMoyen', 3: 'presetDifficile' };
+// Petits nombres entiers, faciles à lire et à additionner de tête. La
+// hiérarchie voulue : une vignette bien placée (3) rapporte plus qu'un
+// bonus d'effet intact ; un effet fort (flou/pixelisation, 2) rapporte le
+// double d'un effet léger (N&B/négatif, 1) ; un coup joué coûte l'unité
+// minimale (1). Pas de multiplicateur final : cocher une transformation de
+// plus rapporte toujours directement des points (+2, une fois, à la
+// victoire), quelle que soit la vignette qui la reçoit ou non au mélange.
+const PTS_PER_TILE = 3;                 // par vignette résolue
+const PTS_PER_MOVE = 1;                 // malus par coup joué (échange, rotation/miroir, nettoyage)
+const FX_BONUS_LIGHT = 1;               // par vignette N&B/négatif intacte (jamais nettoyée)
+const FX_BONUS_STRONG = 2;              // par vignette floutée/pixelisée intacte (jamais nettoyée)
+const PTS_PER_ACTIVE_TRANSFORM = 2;     // par type de transformation coché à l'accueil (sur 6)
 
-// Moins de transformations actives = puzzle plus simple = score réduit.
 const TRANSFORM_KEYS = ['rot', 'flip', 'blur', 'pix', 'nb', 'inv'];
-const MULT_MIN = 0.4;   // multiplicateur si aucune transformation n'est active
-
-function transformMultiplier(s) {
-  const enabled = TRANSFORM_KEYS.filter(k => s[k]).length;
-  return MULT_MIN + (1 - MULT_MIN) * (enabled / TRANSFORM_KEYS.length);
-}
 
 // Niveau Facile uniquement : passé ce délai (selon la taille de grille), le
 // score retombe à zéro. La partie continue, mais ne rapporte plus rien —
@@ -266,33 +267,34 @@ function computeScore() {
   // verte), pas sur le total de la grille — sinon le score en direct
   // n'augmente jamais au fil de la partie. Les deux coïncident à la victoire.
   const okTiles = g.tiles.filter(isSolved).length;
-  const bonusTiles = g.tiles.filter(t => isSolved(t) && t.fx).length;
-  const bonusPts = bonusTiles * (BONUS_UNCLEANED[s.fxLevel] || BONUS_UNCLEANED[2]);
   const basePts = okTiles * PTS_PER_TILE;
 
-  // Détail du malus « coups », par type d'action — leur somme équivaut
-  // exactement à l'ancien malus global (g.moves × PTS_PER_MOVE), chaque
-  // coup coûtant le même montant quel que soit son type.
+  const lightTiles = g.tiles.filter(t => isSolved(t) && (t.fx === 'nb' || t.fx === 'inv')).length;
+  const strongTiles = g.tiles.filter(t => isSolved(t) && (t.fx === 'blur' || t.fx === 'pix')).length;
+  const lightPts = lightTiles * FX_BONUS_LIGHT;
+  const strongPts = strongTiles * FX_BONUS_STRONG;
+
+  // Détail du malus « coups », par type d'action — leur somme équivaut au
+  // malus global, chaque coup coûtant le même montant quel que soit son type.
   const swapPts = g.swaps * PTS_PER_MOVE;
   const transformPts = g.transforms * PTS_PER_MOVE;
   const cleanPts = g.cleans * PTS_PER_MOVE;
   const movesMalus = swapPts + transformPts + cleanPts;
 
-  const mult = transformMultiplier(s);
-  const subtotal = Math.max(0, basePts + bonusPts - movesMalus);
+  const activeCount = TRANSFORM_KEYS.filter(k => s[k]).length;
+  const activePts = activeCount * PTS_PER_ACTIVE_TRANSFORM;
 
   const elapsed = Math.floor((Date.now() - g.start) / 1000);
   const zeroed = s.fxLevel === 1 && elapsed >= (FACILE_ZERO_AT[s.cols] ?? Infinity);
 
   return {
-    total: zeroed ? 0 : Math.round(subtotal * mult),
-    subtotal, basePts, okTiles,
+    total: zeroed ? 0 : Math.max(0, basePts + lightPts + strongPts + activePts - movesMalus),
+    basePts, okTiles,
     swaps: g.swaps, swapPts,
     transforms: g.transforms, transformPts,
     cleans: g.cleans, cleanPts,
-    bonusTiles, bonusPts, mult, zeroed,
-    activeCount: TRANSFORM_KEYS.filter(k => s[k]).length,
-    levelKey: LEVEL_NAME_KEY[s.fxLevel] || LEVEL_NAME_KEY[2],
+    lightTiles, lightPts, strongTiles, strongPts,
+    activeCount, activePts, zeroed,
   };
 }
 
@@ -786,14 +788,9 @@ function checkWin() {
       if (sc.swaps > 0) rows.push(row(tfN('rowSwaps', sc.swaps), -sc.swapPts, 'neg'));
       if (sc.transforms > 0) rows.push(row(tfN('rowTransforms', sc.transforms), -sc.transformPts, 'neg'));
       if (sc.cleans > 0) rows.push(row(tfN('rowCleans', sc.cleans), -sc.cleanPts, 'neg'));
-      if (sc.bonusTiles > 0) {
-        rows.push(row(tfN('rowBonus', sc.bonusTiles, { level: t(sc.levelKey) }), sc.bonusPts, 'pos'));
-      }
-      if (sc.mult < 1) {
-        rows.push(row(t('rowSubtotal'), Math.round(sc.subtotal), '', 'score-row--subtotal'));
-        rows.push(`<div class="score-row score-row--mult"><span>${tf('rowMult', { n: sc.activeCount })}</span>
-          <strong>×${sc.mult.toFixed(2)}</strong></div>`);
-      }
+      if (sc.lightTiles > 0) rows.push(row(tfN('rowBonusLight', sc.lightTiles), sc.lightPts, 'pos'));
+      if (sc.strongTiles > 0) rows.push(row(tfN('rowBonusStrong', sc.strongTiles), sc.strongPts, 'pos'));
+      if (sc.activeCount > 0) rows.push(row(tf('rowActive', { n: sc.activeCount }), sc.activePts, 'pos'));
       rows.push(row(t('rowTotal'), sc.total, '', 'score-row--total'));
 
       table.innerHTML = rows.join('');

@@ -685,21 +685,6 @@ body::after {
 }
 .score-row strong.pos { color: #1f8a4c; }
 .score-row strong.neg { color: var(--red-dark); }
-.score-row.score-row--mult span,
-.score-row.score-row--mult strong {
-  color: rgba(38, 18, 13, 0.55);
-  font-style: italic;
-}
-.score-row.score-row--subtotal {
-  border-top: 1px dashed rgba(38, 18, 13, 0.2);
-  margin-top: 2px;
-  padding-top: 9px;
-}
-.score-row.score-row--subtotal span,
-.score-row.score-row--subtotal strong {
-  font-weight: 700;
-  color: rgba(38, 18, 13, 0.8);
-}
 .score-row.score-row--total {
   border-top: 2px solid rgba(38, 18, 13, 0.18);
   border-bottom: none;

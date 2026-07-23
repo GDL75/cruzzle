@@ -59,16 +59,20 @@ sans aucun service externe.
 
 Affiché **en direct** dans le HUD pendant la partie, et détaillé sur l'écran de victoire :
 
-- **10 points** par vignette résolue.
+Petits nombres entiers, additionnables de tête — pas de multiplicateur final :
+
+- **3 points** par vignette résolue.
 - **Bonus vignettes intactes** : pour chaque vignette qui garde son effet
-  (flou, pixelisation, N&B, négatif) sans jamais avoir été nettoyée — bien
-  placée et bien orientée quand même — un bonus croissant selon le niveau
-  de difficulté des transformations : +10 pts en Facile, +25 en Moyen,
-  +45 en Difficile.
-- **Malus mouvements** : −1 point par coup joué.
-- **Multiplicateur de transformations** : de ×0,4 (aucune transformation active)
-  à ×1 (les 6 activées — rotations, miroirs, flou, pixelisation, N&B, négatif),
-  pour qu'une partie simplifiée à l'accueil rapporte nécessairement moins.
+  sans jamais avoir été nettoyée — bien placée et bien orientée quand même —
+  +1 pt si l'effet est léger (N&B, négatif), +2 pts s'il est fort (flou,
+  pixelisation).
+- **Malus mouvements** : −1 point par coup joué (échange, rotation/miroir,
+  nettoyage).
+- **Bonus transformations activées** : +2 points par type de transformation
+  coché à l'accueil (sur 6 : rotations, miroirs, flou, pixelisation, N&B,
+  négatif), accordé une seule fois à la victoire — c'est le seul moyen
+  d'obtenir un gros score : cocher un maximum de transformations et révéler
+  le moins de vignettes possible.
 - **Délai du niveau Facile** : passé un certain temps, le score retombe à
   zéro (la partie continue, mais ne rapporte plus rien) — 3 min en grille
   3×3, 5 min en 4×4, 7 min en 5×5, 9 min en 6×6. Ne s'applique qu'au niveau
