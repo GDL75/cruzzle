@@ -1,52 +1,20 @@
 'use strict';
 
-/* Service worker Cruzzle : met l'appli en cache pour le hors ligne.
-   Incrémenter CACHE à chaque mise à jour des fichiers pour forcer
-   le rafraîchissement chez les utilisateurs. */
+/* Service worker « interrupteur » : Cruzzle a déménagé sur Vercel.
+   Ce fichier remplace l'ancien service worker (contenu différent -> le
+   navigateur détecte la mise à jour même pour les PWA déjà installées).
+   Son seul rôle est de se désinstaller lui-même et de vider les caches
+   de l'ancienne version hors ligne, puis de recharger les fenêtres
+   ouvertes vers la page de redirection. */
 
-const CACHE = 'cruzzle-v21';
+self.addEventListener('install', () => self.skipWaiting());
 
-const ASSETS = [
-  '.',
-  'index.html',
-  'css/style.css',
-  'js/app.js',
-  'manifest.json',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/icon-512-maskable.png',
-  'icons/apple-touch-icon.png',
-];
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
-/* Cache d'abord (l'appli est autonome), réseau en secours ;
-   les réponses réseau de même origine sont mises en cache au passage. */
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(hit =>
-      hit || fetch(e.request).then(res => {
-        if (res.ok && new URL(e.request.url).origin === self.location.origin) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
-        }
-        return res;
-      })
-    )
-  );
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    await self.registration.unregister();
+    const clientsList = await self.clients.matchAll({ type: 'window' });
+    clientsList.forEach(client => client.navigate(client.url));
+  })());
 });

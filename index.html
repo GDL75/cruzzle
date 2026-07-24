@@ -1,188 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>CRUZZLE — Play with your pictures</title>
-  <meta name="description" content="Photo puzzle game: rebuild your photo by swapping shuffled tiles and undoing their transformations.">
-  <meta name="theme-color" content="#e8290b">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23e8290b'/%3E%3Ctext x='16' y='23' font-size='20' font-family='Georgia' font-style='italic' font-weight='bold' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Cruzzle">
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUZZLE a déménagé</title>
+  <meta http-equiv="refresh" content="0; url=https://cruzzle-lpu3at6bg-gdl75s-projects.vercel.app">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #faf6f0;
+      color: #26120d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 380px;
+    }
+    h1 {
+      font-family: "Bookman Old Style", "Rockwell", Georgia, serif;
+      font-style: italic;
+      color: #e8290b;
+      font-size: 2rem;
+      margin: 0 0 12px;
+    }
+    p { line-height: 1.5; margin: 0 0 22px; }
+    a {
+      display: inline-block;
+      background: linear-gradient(160deg, #e8290b, #b71c0c);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 <body>
-
-  <!-- ============ ÉCRAN DE CONFIGURATION ============ -->
-  <div id="setup" class="screen active">
-    <header class="brand">
-      <div class="brand-box">
-        <h1>CRUZZLE</h1>
-        <p>Play with your pictures</p>
-      </div>
-    </header>
-
-    <div class="lang-row">
-      <select id="langSel" aria-label="Language">
-        <option value="en">English</option>
-        <option value="fr">Français</option>
-        <option value="es">Español</option>
-        <option value="de">Deutsch</option>
-      </select>
-    </div>
-
-    <main class="card">
-      <section>
-        <h2 data-i18n="photoTitle">Your photo</h2>
-        <p class="lead" data-i18n="photoLead">The photo's tiles will be shuffled and transformed.
-        Tap the photo to replace it with one of your own.</p>
-        <div class="slots">
-          <button type="button" class="slot" id="slot0">
-            <img id="prev0" alt="">
-            <span data-i18n="changePhoto">Change photo</span>
-          </button>
-        </div>
-        <input type="file" id="file0" accept="image/*" hidden>
-      </section>
-
-      <section>
-        <h2 data-i18n="difficulty">Difficulty</h2>
-        <div class="chips">
-          <button type="button" class="chip" data-preset="facile" data-i18n="presetFacile">Easy</button>
-          <button type="button" class="chip" data-preset="moyen" data-i18n="presetMoyen">Medium</button>
-          <button type="button" class="chip" data-preset="difficile" data-i18n="presetDifficile">Hard</button>
-        </div>
-        <p id="presetInfo" class="lead"></p>
-
-        <div class="opts">
-          <label class="opt">
-            <span data-i18n="gridLabel">Grid</span>
-            <select id="gridSel">
-              <option value="3x3">3 × 3</option>
-              <option value="4x4">4 × 4</option>
-              <option value="5x5">5 × 5</option>
-              <option value="6x6">6 × 6</option>
-            </select>
-          </label>
-          <label class="opt">
-            <span data-i18n="timeLabel">Time limit</span>
-            <select id="timeSel">
-              <option value="0">No limit</option>
-              <option value="60">1 minute</option>
-              <option value="120">2 minutes</option>
-              <option value="180">3 minutes</option>
-              <option value="300">5 minutes</option>
-              <option value="600">10 minutes</option>
-            </select>
-          </label>
-        </div>
-
-        <fieldset class="checks">
-          <legend data-i18n="checksLegend">Tile transformations</legend>
-          <label><input type="checkbox" id="ckRot"> <span data-i18n="ckRot">Rotations ±90°</span></label>
-          <label><input type="checkbox" id="ckFlip"> <span data-i18n="ckFlip">Mirrors (flips)</span></label>
-          <label><input type="checkbox" id="ckBlur"> <span data-i18n="ckBlur">Blur</span></label>
-          <label><input type="checkbox" id="ckPix"> <span data-i18n="ckPix">Pixelation</span></label>
-          <label><input type="checkbox" id="ckNb"> <span data-i18n="ckNb">Black &amp; white</span></label>
-          <label><input type="checkbox" id="ckInv"> <span data-i18n="ckInv">Negative</span></label>
-        </fieldset>
-      </section>
-
-      <button type="button" id="btnPlay" class="btn-primary" data-i18n="play">Play</button>
-    </main>
-
-    <footer class="credits" data-i18n="credits">Rebuild the photo: swap the tiles and undo their transformations.</footer>
+  <div class="card">
+    <h1>CRUZZLE</h1>
+    <p>Cette adresse a déménagé. Vous allez être redirigé automatiquement — si ce n'est pas le cas, cliquez ci-dessous.</p>
+    <a id="link" href="https://cruzzle-lpu3at6bg-gdl75s-projects.vercel.app">Ouvrir Cruzzle</a>
   </div>
-
-  <!-- ============ ÉCRAN DE JEU ============ -->
-  <div id="game" class="screen">
-    <header class="hud">
-      <button type="button" id="btnBack" class="btn-ghost" data-i18n-aria="ariaBack" aria-label="Back to settings">
-        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="stat"><span data-i18n="moves">Moves</span><strong id="moves">0</strong></div>
-      <div class="stat stat-score"><span data-i18n="scoreLabel">Score</span><strong id="liveScore">0</strong></div>
-      <div class="stat"><span data-i18n="time">Time</span><strong id="clock">0:00</strong></div>
-      <button type="button" id="btnPeek" class="btn-ghost" data-i18n-aria="ariaPeek" aria-label="Show the original photo">
-        <svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.8" fill="currentColor"/></svg>
-        <span data-i18n="peek">Preview</span>
-      </button>
-    </header>
-
-    <div class="progress">
-      <div class="progress-track"><div id="progressBar"></div></div>
-      <span id="progressTxt"></span>
-    </div>
-
-    <div id="board"></div>
-
-    <div class="footer-zone">
-      <p id="hint" data-i18n="hint">Tap a tile to select it, then tap another one to swap them.</p>
-      <div id="tools" class="tools hidden">
-        <button type="button" data-op="ccw" id="opCcw">
-          <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.34-5.66" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 3.5V9h5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span data-i18n="toolCcw">Rotate −90°</span>
-        </button>
-        <button type="button" data-op="cw" id="opCw">
-          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 3.5V9h-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span data-i18n="toolCw">Rotate +90°</span>
-        </button>
-        <button type="button" data-op="fh" id="opFh">
-          <svg viewBox="0 0 24 24"><path d="M12 2v20" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 3"/><path d="M9 7L3.5 12 9 17z" fill="currentColor"/><path d="M15 7l5.5 5-5.5 5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          <span data-i18n="toolFh">Flip horiz.</span>
-        </button>
-        <button type="button" data-op="fv" id="opFv">
-          <svg viewBox="0 0 24 24"><path d="M2 12h20" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 3"/><path d="M7 9L12 3.5 17 9z" fill="currentColor"/><path d="M7 15l5 5.5 5-5.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          <span data-i18n="toolFv">Flip vert.</span>
-        </button>
-        <button type="button" data-op="fx" id="opFx">
-          <svg viewBox="0 0 24 24"><path d="M12 3l2.2 5.3L20 10l-5.8 1.7L12 17l-2.2-5.3L4 10l5.8-1.7z" fill="currentColor"/><circle cx="18.5" cy="17.5" r="1.6" fill="currentColor"/><circle cx="6" cy="18.5" r="1.2" fill="currentColor"/></svg>
-          <span id="opFxLabel">Clean</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ SUPERPOSITIONS ============ -->
-  <div id="peek" class="overlay peek">
-    <div class="peek-imgs">
-      <figure><img id="peek0" alt=""><figcaption data-i18n="peekCaption">Original photo</figcaption></figure>
-    </div>
-  </div>
-
-  <div id="win" class="overlay">
-    <div id="confetti" aria-hidden="true"></div>
-    <div class="panel">
-      <h2 data-i18n="winTitle">Well done!</h2>
-      <div class="score-display">
-        <span class="score-label" data-i18n="scoreLabel">Score</span>
-        <strong id="scoreValue">0</strong>
-      </div>
-      <p id="winStats"></p>
-      <div id="scoreTable" class="score-table hidden"></div>
-      <p id="winZeroed" class="zeroed-line hidden"></p>
-      <div class="panel-btns">
-        <button type="button" id="btnReplay" class="btn-primary" data-i18n="replay">Play again</button>
-        <button type="button" id="btnWinSetup" class="btn-secondary" data-i18n="changeSetup">Change settings</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="lose" class="overlay">
-    <div class="panel">
-      <h2 data-i18n="loseTitle">Time's up!</h2>
-      <p data-i18n="loseText">The photo wasn't rebuilt in time. Try again?</p>
-      <div class="panel-btns">
-        <button type="button" id="btnRetry" class="btn-primary" data-i18n="retry">Try again</button>
-        <button type="button" id="btnLoseSetup" class="btn-secondary" data-i18n="changeSetup">Change settings</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/app.js"></script>
+  <script>
+    // Si un ancien Cruzzle (PWA hors ligne) était installé depuis cette
+    // adresse, on désinscrit son service worker et on vide son cache avant
+    // de rediriger, sinon la version hors ligne resterait servie en boucle.
+    (async () => {
+      const dest = document.getElementById('link').href;
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        if (window.caches) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      } catch (e) { /* tant pis, la redirection a lieu quand même */ }
+      location.replace(dest);
+    })();
+  </script>
 </body>
 </html>
