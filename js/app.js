@@ -58,7 +58,7 @@ const I18N = {
     rowBonusStrong1: '1 blurred/pixelated tile kept intact', rowBonusStrongN: '{n} blurred/pixelated tiles kept intact',
     rowActive: '{n}/6 transformations enabled',
     rowTotal: 'Total',
-    zeroedLine: 'Score reset to zero — Easy mode time limit exceeded ({min} min for this grid).',
+    zeroedLine: 'Easy mode time limit exceeded ({min} min for this grid) — placed tiles no longer earn points, only bonuses/penalties still count.',
     replay: 'Play again', changeSetup: 'Change settings',
     loseTitle: "Time's up!",
     loseText: "The photo wasn't rebuilt in time. Try again?",
@@ -98,7 +98,7 @@ const I18N = {
     rowBonusStrong1: '1 vignette floutée/pixelisée intacte', rowBonusStrongN: '{n} vignettes floutées/pixelisées intactes',
     rowActive: '{n}/6 transformations activées',
     rowTotal: 'Total',
-    zeroedLine: 'Score ramené à zéro — délai du niveau Facile dépassé ({min} min pour cette grille).',
+    zeroedLine: 'Délai du niveau Facile dépassé ({min} min pour cette grille) — les vignettes bien placées ne rapportent plus de points, seuls les bonus/malus comptent encore.',
     replay: 'Rejouer', changeSetup: 'Modifier la partie',
     loseTitle: 'Temps écoulé !',
     loseText: "La photo n'a pas été reconstituée à temps. On retente ?",
@@ -138,7 +138,7 @@ const I18N = {
     rowBonusStrong1: '1 ficha borrosa/pixelada intacta', rowBonusStrongN: '{n} fichas borrosas/pixeladas intactas',
     rowActive: '{n}/6 transformaciones activadas',
     rowTotal: 'Total',
-    zeroedLine: 'Puntuación a cero — tiempo del nivel Fácil superado ({min} min para esta cuadrícula).',
+    zeroedLine: 'Tiempo del nivel Fácil superado ({min} min para esta cuadrícula) — las fichas colocadas ya no dan puntos, solo cuentan las bonificaciones/penalizaciones.',
     replay: 'Jugar de nuevo', changeSetup: 'Cambiar ajustes',
     loseTitle: '¡Tiempo agotado!',
     loseText: 'La foto no se reconstruyó a tiempo. ¿Lo intentamos de nuevo?',
@@ -178,7 +178,7 @@ const I18N = {
     rowBonusStrong1: '1 unberührte unscharfe/verpixelte Kachel', rowBonusStrongN: '{n} unberührte unscharfe/verpixelte Kacheln',
     rowActive: '{n}/6 Transformationen aktiv',
     rowTotal: 'Gesamt',
-    zeroedLine: 'Punktzahl auf null gesetzt — Zeitlimit des Levels „Leicht“ überschritten ({min} Min. für dieses Raster).',
+    zeroedLine: 'Zeitlimit des Levels „Leicht“ überschritten ({min} Min. für dieses Raster) — platzierte Kacheln bringen keine Punkte mehr, nur Boni/Abzüge zählen noch.',
     replay: 'Nochmal spielen', changeSetup: 'Einstellungen ändern',
     loseTitle: 'Zeit abgelaufen!',
     loseText: 'Das Foto wurde nicht rechtzeitig wiederhergestellt. Nochmal versuchen?',
@@ -296,11 +296,15 @@ function computeScore() {
   const activeCount = TRANSFORM_KEYS.filter(k => s[k]).length;
   const activePts = activeCount * PTS_PER_ACTIVE_TRANSFORM;
 
+  // Niveau Facile uniquement : passé le délai, les points de base (vignettes
+  // bien placées) ne comptent plus, mais bonus et malus continuent de
+  // s'appliquer normalement — le score n'est donc pas forcément nul.
   const elapsed = Math.floor((Date.now() - g.start) / 1000);
   const zeroed = s.fxLevel === 1 && elapsed >= (FACILE_ZERO_AT[s.cols] ?? Infinity);
+  const restPts = lightPts + strongPts + activePts - swapPts - cleanPts;
 
   return {
-    total: zeroed ? 0 : Math.max(0, basePts + lightPts + strongPts + activePts - swapPts - cleanPts),
+    total: Math.max(0, zeroed ? restPts : basePts + restPts),
     basePts, okTiles,
     swaps: g.swaps, swapPts,
     transforms: g.transforms,
@@ -780,36 +784,35 @@ function checkWin() {
     const table = $('#scoreTable');
     const zeroedLine = $('#winZeroed');
 
+    const tfN = (base, n, vars) => tf(n === 1 ? `${base}1` : `${base}N`, { n, ...vars });
+    const row = (label, pts, cls, extraClass = '') => `
+      <div class="score-row ${extraClass}"><span>${label}</span>
+      <strong class="${cls}">${pts > 0 ? '+' : ''}${pts}</strong></div>`;
+    const freeRow = label => `
+      <div class="score-row"><span>${label}</span><strong>0</strong></div>`;
+
+    // Niveau Facile, délai dépassé : les vignettes bien placées ne rapportent
+    // plus de points (ligne exclue), mais le reste du calcul — malus et
+    // bonus — continue normalement, sans mettre le score à zéro.
+    const rows = [];
+    if (!sc.zeroed) rows.push(row(tfN('rowTiles', sc.okTiles), sc.basePts, 'pos'));
+    if (sc.swaps > 0) rows.push(row(tfN('rowSwaps', sc.swaps), -sc.swapPts, 'neg'));
+    if (sc.transforms > 0) rows.push(freeRow(tfN('rowTransforms', sc.transforms)));
+    if (sc.cleans > 0) rows.push(row(tfN('rowCleans', sc.cleans), -sc.cleanPts, 'neg'));
+    if (sc.lightTiles > 0) rows.push(row(tfN('rowBonusLight', sc.lightTiles), sc.lightPts, 'pos'));
+    if (sc.strongTiles > 0) rows.push(row(tfN('rowBonusStrong', sc.strongTiles), sc.strongPts, 'pos'));
+    if (sc.activeCount > 0) rows.push(row(tf('rowActive', { n: sc.activeCount }), sc.activePts, 'pos'));
+    rows.push(row(t('rowTotal'), sc.total, '', 'score-row--total'));
+
+    table.innerHTML = rows.join('');
+    table.classList.remove('hidden');
+
     if (sc.zeroed) {
-      // Score nul (niveau Facile, délai dépassé) : le détail n'aurait plus
-      // de sens puisqu'il n'expliquerait pas un total forcé à 0.
-      table.classList.add('hidden');
-      table.innerHTML = '';
       const mins = Math.round((FACILE_ZERO_AT[state.settings.cols] ?? 0) / 60);
       zeroedLine.textContent = tf('zeroedLine', { min: mins });
       zeroedLine.classList.remove('hidden');
     } else {
       zeroedLine.classList.add('hidden');
-
-      const tfN = (base, n, vars) => tf(n === 1 ? `${base}1` : `${base}N`, { n, ...vars });
-      const row = (label, pts, cls, extraClass = '') => `
-        <div class="score-row ${extraClass}"><span>${label}</span>
-        <strong class="${cls}">${pts > 0 ? '+' : ''}${pts}</strong></div>`;
-
-      const freeRow = label => `
-        <div class="score-row"><span>${label}</span><strong>0</strong></div>`;
-
-      const rows = [row(tfN('rowTiles', sc.okTiles), sc.basePts, 'pos')];
-      if (sc.swaps > 0) rows.push(row(tfN('rowSwaps', sc.swaps), -sc.swapPts, 'neg'));
-      if (sc.transforms > 0) rows.push(freeRow(tfN('rowTransforms', sc.transforms)));
-      if (sc.cleans > 0) rows.push(row(tfN('rowCleans', sc.cleans), -sc.cleanPts, 'neg'));
-      if (sc.lightTiles > 0) rows.push(row(tfN('rowBonusLight', sc.lightTiles), sc.lightPts, 'pos'));
-      if (sc.strongTiles > 0) rows.push(row(tfN('rowBonusStrong', sc.strongTiles), sc.strongPts, 'pos'));
-      if (sc.activeCount > 0) rows.push(row(tf('rowActive', { n: sc.activeCount }), sc.activePts, 'pos'));
-      rows.push(row(t('rowTotal'), sc.total, '', 'score-row--total'));
-
-      table.innerHTML = rows.join('');
-      table.classList.remove('hidden');
     }
 
     launchConfetti();

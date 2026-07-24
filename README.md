@@ -83,9 +83,11 @@ Petits nombres entiers, additionnables de tête — pas de multiplicateur final 
   négatif), accordé une seule fois à la victoire — c'est le seul moyen
   d'obtenir un gros score : cocher un maximum de transformations et révéler
   le moins de vignettes possible.
-- **Délai du niveau Facile** : passé un certain temps, le score retombe à
-  zéro (la partie continue, mais ne rapporte plus rien) — 3 min en grille
-  3×3, 5 min en 4×4, 7 min en 5×5, 9 min en 6×6. Ne s'applique qu'au niveau
+- **Délai du niveau Facile** : passé un certain temps, les points de base
+  (vignettes bien placées) cessent de compter — la partie continue, et les
+  bonus/malus s'appliquent toujours normalement, donc le score n'est pas
+  forcément nul — 3 min en grille 3×3, 5 min en 4×4, 7 min en 5×5, 9 min en
+  6×6. Ne s'applique qu'au niveau
   Facile ; Moyen et Difficile n'ont pas cette contrainte (ils ont déjà un
   temps limité strict par défaut, qui termine la partie).
 
