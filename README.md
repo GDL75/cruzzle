@@ -64,8 +64,14 @@ Petits nombres entiers, additionnables de tête — pas de multiplicateur final 
 - **3 points** par vignette résolue.
 - **Bonus vignettes intactes** : pour chaque vignette qui garde son effet
   sans jamais avoir été nettoyée — bien placée et bien orientée quand même —
-  +1 pt si l'effet est léger (N&B, négatif), +2 pts s'il est fort (flou,
-  pixelisation).
+  un bonus qui croît avec la taille de la grille (plus dur de laisser une
+  vignette de côté quand il y en a beaucoup) :
+  | Grille | N&B / négatif | Flou / pixelisation |
+  |---|---|---|
+  | 3×3 | +1 | +2 |
+  | 4×4 | +2 | +4 |
+  | 5×5 | +3 | +6 |
+  | 6×6 | +4 | +8 |
 - **Malus échanges et nettoyages** : −1 point par échange de vignettes et
   −1 point par nettoyage. Corriger une rotation/un miroir, en revanche, ne
   coûte rien : c'est un passage obligé quand ces options sont cochées, pas

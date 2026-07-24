@@ -255,8 +255,12 @@ const PIX_RES = { 1: 11,    2: 7,     3: 4 };        // pixels par vignette (pix
 const PTS_PER_TILE = 3;                 // par vignette résolue
 const PTS_PER_SWAP = 1;                 // malus par échange de vignettes
 const PTS_PER_CLEAN = 1;                // malus par nettoyage (en plus du bonus perdu et des secondes)
-const FX_BONUS_LIGHT = 1;               // par vignette N&B/négatif intacte (jamais nettoyée)
-const FX_BONUS_STRONG = 2;              // par vignette floutée/pixelisée intacte (jamais nettoyée)
+// Bonus par vignette intacte (N&B/négatif, ou floutée/pixelisée), croissant
+// avec la taille de la grille — une vignette perdue au milieu de 36 est plus
+// dure à repérer/laisser de côté que sur une grille de 9. Clé = nombre de
+// colonnes (les grilles sont toujours carrées).
+const FX_BONUS_LIGHT = { 3: 1, 4: 2, 5: 3, 6: 4 };   // N&B / négatif
+const FX_BONUS_STRONG = { 3: 2, 4: 4, 5: 6, 6: 8 };  // flou / pixelisation
 const PTS_PER_ACTIVE_TRANSFORM = 2;     // par type de transformation coché à l'accueil (sur 6)
 
 const TRANSFORM_KEYS = ['rot', 'flip', 'blur', 'pix', 'nb', 'inv'];
@@ -281,8 +285,8 @@ function computeScore() {
 
   const lightTiles = g.tiles.filter(t => isSolved(t) && (t.fx === 'nb' || t.fx === 'inv')).length;
   const strongTiles = g.tiles.filter(t => isSolved(t) && (t.fx === 'blur' || t.fx === 'pix')).length;
-  const lightPts = lightTiles * FX_BONUS_LIGHT;
-  const strongPts = strongTiles * FX_BONUS_STRONG;
+  const lightPts = lightTiles * (FX_BONUS_LIGHT[s.cols] ?? FX_BONUS_LIGHT[4]);
+  const strongPts = strongTiles * (FX_BONUS_STRONG[s.cols] ?? FX_BONUS_STRONG[4]);
 
   // Transforms reste compté pour l'affichage (transparence avec le total de
   // coups) mais ne coûte plus de points — voir note ci-dessus.
